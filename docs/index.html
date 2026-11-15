@@ -57,6 +57,7 @@
           <p id="angle-error" class="error" aria-live="polite" hidden></p>
         </div>
         <div class="total"><div class="caption">Hauteur totale de la pièce<small id="formula">15 mm d’encastrement + 40 mm de rehaussement</small></div><output id="total" for="depth rise">55<span>mm</span></output></div>
+        <p id="total-error" class="error" role="alert" hidden></p>
         <button class="primary" type="submit"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg>Prévisualisation 3D</button>
         <p id="status" class="status" role="status">Aperçu à jour avec les dimensions ci-dessus.</p>
       </form>
@@ -209,11 +210,16 @@ function angleError(v){
   }
   return '';
 }
-const valid = () => {const v=values();return dimensionsValid(v) && !angleError(v);};
+const totalHeightError = v => Number.isFinite(v.depth) && Number.isFinite(v.rise) && v.depth+v.rise>300
+  ? 'La hauteur totale ne doit pas dépasser 300 mm. Diminuez la hauteur d’encastrement ou celle du rehaussement.' : '';
+const valid = () => {const v=values();return dimensionsValid(v) && !angleError(v) && !totalHeightError(v);};
 function refreshForm(){
-  const v=values(),error=angleError(v),dimsOkay=dimensionsValid(v),okay=dimsOkay&&!error,dirty=fields.some(k=>v[k]!==applied[k]);
+  const v=values(),error=angleError(v),heightError=totalHeightError(v),dimsOkay=dimensionsValid(v),okay=dimsOkay&&!error&&!heightError,dirty=fields.some(k=>v[k]!==applied[k]);
   $('angle-error').textContent=error;
   $('angle-error').hidden=!error;
+  $('total-error').textContent=heightError;
+  $('total-error').hidden=!heightError;
+  for(const id of ['depth','rise'])$(id).setAttribute('aria-invalid',String(!!heightError));
   $('angle').setAttribute('aria-invalid',String(!!error));
   $('angle').setCustomValidity(error);
   $('total').innerHTML=dimsOkay?fmt(v.depth+v.rise)+'<span>mm</span>':'—';
@@ -350,7 +356,7 @@ function highlightMarkup(geometry,project,camera,field,v){
   return '<g data-highlight="'+field+'" fill="none" stroke="#c32e2e" stroke-width="2.3" stroke-linecap="round">'+paths('visible')+'</g><g data-highlight-hidden="'+field+'" fill="none" stroke="#c32e2e" stroke-width="2.1" stroke-dasharray="4 3">'+paths('hidden')+'</g>';
 }
 modeInputs.forEach(input=>input.addEventListener('change',()=>{selectField('angle');setAngleMode();}));
-$('config-form').addEventListener('submit',e=>{e.preventDefault();refreshForm();if(!valid()){if($('angle-error').textContent)$('angle').focus();return;}applied=values();previewMode='interactive';activeField=null;render();refreshForm();});
+$('config-form').addEventListener('submit',e=>{e.preventDefault();refreshForm();if(!valid()){if($('angle-error').textContent)$('angle').focus();else if($('total-error').textContent)$('rise').focus();return;}applied=values();previewMode='interactive';activeField=null;render();refreshForm();});
 function configurationText(v){
   const b=baseDimensions(v);
   return `CONFIGURATION — REHAUSSEUR RECTANGULAIRE\n\nLargeur intérieure : ${fmt(v.width)} mm\nLongueur intérieure : ${fmt(v.length)} mm\nHauteur d’encastrement : ${fmt(v.depth)} mm\nHauteur du rehaussement : ${fmt(v.rise)} mm\nHauteur totale : ${fmt(v.depth+v.rise)} mm\nÉpaisseur des parois : 3 mm\nDimensions extérieures au logement : ${fmt(v.width+6)} × ${fmt(v.length+6)} mm\nAngle d’extrusion : ${signedAngle(v.angle)}\nDépart de l’inclinaison : fond du logement, à ${fmt(v.rise)} mm du bas.\nConvention : positif = élargissement vers le bas ; négatif = rétrécissement vers le bas.\nChanfreins extérieurs haut et bas : 2 mm à 45°.\nBordure supérieure plane restante : 1 mm.\nSurface d’appui après chanfrein : ${fmt(b.width-2*CHAMFER)} × ${fmt(b.length-2*CHAMFER)} mm\n\nAucun jeu supplémentaire ajouté aux dimensions intérieures.\nFiche de dimensions à transmettre pour une demande d’impression 3D.\nMatériau, jeu d’ajustement et résistance à la charge à valider avant fabrication.\nAucune demande n’a été envoyée automatiquement.\n`;
