@@ -37,8 +37,8 @@
       <div class="form-heading"><h2 id="dimensions-heading">Vos dimensions</h2><span class="unit-tag">MM / DEGRÉS</span></div>
       <p class="help">Mesurez la partie du pied qui entrera dans le rehausseur.</p>
       <form id="config-form">
-        <div class="field"><label for="width">Largeur du pied</label><div class="input-wrap"><input id="width" name="width" type="number" min="1" max="500" step="0.1" value="40" required><span>mm</span></div></div>
-        <div class="field"><label for="length">Longueur du pied</label><div class="input-wrap"><input id="length" name="length" type="number" min="1" max="500" step="0.1" value="60" required><span>mm</span></div></div>
+        <div class="field"><label for="width">Largeur du pied</label><div class="input-wrap"><input id="width" name="width" type="number" min="1" max="300" step="0.1" value="40" required><span>mm</span></div></div>
+        <div class="field"><label for="length">Longueur du pied</label><div class="input-wrap"><input id="length" name="length" type="number" min="1" max="300" step="0.1" value="60" required><span>mm</span></div></div>
         <div class="two-fields">
           <div class="field"><label for="depth">Hauteur d’encastrement</label><div class="input-wrap"><input id="depth" name="depth" type="number" min="2" max="300" step="0.1" value="15" required><span>mm</span></div><small>Profondeur du logement du pied (20 mm conseillés pour les meubles hauts).</small></div>
           <div class="field"><label for="rise">Hauteur du rehaussement</label><div class="input-wrap"><input id="rise" name="rise" type="number" min="1" max="300" step="0.1" value="40" required><span>mm</span></div><small>Hauteur gagnée sous le meuble.</small></div>
@@ -189,7 +189,7 @@ function setupOrbitControls(){
 
 const values = () => Object.fromEntries(fields.map(k=>[k,$(k).valueAsNumber]));
 function dimensionsValid(v){
-  return dimensionFields.every(k=>Number.isFinite(v[k]) && v[k]>=(k==='depth'?2:1) && v[k]<=(k==='width'||k==='length'?500:300) && Math.abs(v[k]*10-Math.round(v[k]*10))<1e-7);
+  return dimensionFields.every(k=>Number.isFinite(v[k]) && v[k]>=(k==='depth'?2:1) && v[k]<=300 && Math.abs(v[k]*10-Math.round(v[k]*10))<1e-7);
 }
 function baseDimensions(v){
   const slope=Math.tan(v.angle*Math.PI/180);
