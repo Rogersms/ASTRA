@@ -10,6 +10,7 @@
     .edge-legend{display:flex;justify-content:center;gap:22px;margin:-8px 12px 18px;font-size:11px;color:#52604f}.edge-legend span{display:flex;align-items:center;gap:7px}.edge-legend i{width:22px;border-top:1px solid #000}.edge-legend i.dashed{border-top-style:dashed}
     .model-stage{cursor:grab;touch-action:none;user-select:none;overflow:hidden}.model-stage.dragging{cursor:grabbing}.model-stage:focus-visible{outline:2px solid #385b4e;outline-offset:-2px;border-radius:8px}.model-stage svg{pointer-events:none}.orbit-help{text-align:center;color:#52604f;font-size:12px;margin:7px 14px 11px}.orbit-toolbar{display:flex;gap:5px;align-items:center;justify-content:center;margin:0 auto 8px;padding:4px;background:#f9f9f5;border:1px solid #d7dacd;border-radius:9px;max-width:calc(100% - 24px)}.orbit-toolbar button{border:0;border-radius:6px;min-width:32px;min-height:36px;padding:7px 10px;color:var(--ink);background:transparent;font-size:18px}.orbit-toolbar button:hover{background:#e2e6d9}.orbit-toolbar button:disabled{opacity:.35;cursor:default}.orbit-toolbar #reset-view{font-size:11px;background:var(--ink);color:#fff;margin-left:4px;white-space:nowrap}.orbit-toolbar output{font-size:11px;min-width:43px;text-align:center;font-variant-numeric:tabular-nums}.orbit-secondary{font-size:10px;text-align:center;line-height:1.7;color:var(--muted);margin:0 15px 20px}.edge-legend{margin-top:0}
     .shape-choice{padding:0;margin:0 0 15px;border:0;min-width:0}.shape-choice legend{font-size:12px;font-weight:600;margin-bottom:8px}.choice-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.choice-row label{display:flex;align-items:center;gap:5px;min-width:0;padding:9px 6px;border:1px solid #d8ddd6;border-radius:6px;font-size:11px;line-height:1.3;cursor:pointer;background:#fcfcf9}.choice-row label:has(input:checked){border-color:var(--green);background:#eef3ec;color:var(--green);font-weight:600}.choice-row input{accent-color:var(--green);margin:0;flex:none}.choice-row span{overflow-wrap:anywhere}.field[hidden]{display:none}
+    .preview[data-mode="technical"] .orbit-help,.preview[data-mode="technical"] .orbit-toolbar,.preview[data-mode="technical"] .orbit-secondary{display:none}.preview[data-mode="interactive"] .technical-help{display:none}.technical-help{text-align:center;color:#52604f;font-size:12px;line-height:1.5;margin:7px 14px 20px}.preview[data-mode="technical"] .model-stage{cursor:default;touch-action:auto}.preview[data-mode="technical"] .model-stage:focus-visible{outline:none}
   </style>
 </head>
 <body>
@@ -17,9 +18,10 @@
 <main>
   <div class="intro"><div><p class="eyebrow">Le configurateur</p><h1>Votre meuble, à la bonne hauteur.</h1><p>Quelques mesures. Une pièce qui s’adapte à votre pied de meuble.</p></div><div class="step"><b>1</b> Modèle rectangulaire</div></div>
   <div class="workspace">
-    <section class="preview" aria-label="Prévisualisation du rehausseur">
+    <section class="preview" id="preview" data-mode="technical" aria-label="Prévisualisation du rehausseur">
       <div class="preview-head"><span class="label">Votre pièce en volume</span><span class="chip">Rectangulaire</span></div>
       <div class="model-stage" id="model-stage" role="group" tabindex="0" aria-label="Manipuler la pièce en 3D" aria-describedby="orbit-help keyboard-help"><svg id="model" viewBox="0 0 600 440" role="img" aria-labelledby="model-title model-desc"><title id="model-title">Rehausseur rectangulaire en 3D</title><desc id="model-desc"></desc><defs><clipPath id="model-clip"><rect x="16" y="10" width="568" height="384"/></clipPath><filter id="soft"><feGaussianBlur stdDeviation="10"/></filter></defs><g id="drawing"></g></svg></div>
+      <p class="technical-help">Dessin isométrique · sélectionnez un champ pour voir sa cote en rouge</p>
       <p class="orbit-help" id="orbit-help">Glisser pour tourner · Molette pour zoomer</p>
       <div class="orbit-toolbar" role="group" aria-label="Commandes de la vue 3D">
         <button id="zoom-out" type="button" aria-label="Réduire le zoom" title="Réduire le zoom">−</button>
@@ -55,7 +57,7 @@
           <p id="angle-error" class="error" aria-live="polite" hidden></p>
         </div>
         <div class="total"><div class="caption">Hauteur totale de la pièce<small id="formula">15 mm d’encastrement + 40 mm de rehaussement</small></div><output id="total" for="depth rise">55<span>mm</span></output></div>
-        <button class="primary" type="submit"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg>Prévisualisation</button>
+        <button class="primary" type="submit"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg>Prévisualisation 3D</button>
         <p id="status" class="status" role="status">Aperçu à jour avec les dimensions ci-dessus.</p>
       </form>
     </section>
@@ -87,6 +89,7 @@ const WALL = 3, CHAMFER = 2;
 const fmt = n => Number(n.toFixed(1)).toLocaleString('fr-FR');
 const signedAngle = n => (n>0?'+':'')+n+'°';
 let applied = {width:40,length:60,depth:15,rise:40,angle:0};
+let previewMode='technical',activeField=null;
 const view={yaw:-Math.PI/4,elevation:Math.atan(1/Math.sqrt(2)),zoom:1,panX:0,panY:0};
 let geometryCache=null,geometryKey='',framePending=false;
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -152,7 +155,7 @@ function setupOrbitControls(){
   const pan=(dx,dy)=>{view.panX=clamp(view.panX+dx*svgRatio(),-260,260);view.panY=clamp(view.panY+dy*svgRatio(),-190,190);};
   const pair=()=>{const [a,b]=[...pointers.values()];return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,d:Math.hypot(b.x-a.x,b.y-a.y)};};
   stage.addEventListener('pointerdown',e=>{
-    if((e.pointerType==='mouse'&&e.button!==0&&e.button!==2)||pointers.size>=2)return;
+    if(previewMode!=='interactive'||(e.pointerType==='mouse'&&e.button!==0&&e.button!==2)||pointers.size>=2)return;
     e.preventDefault();stage.focus({preventScroll:true});
     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button===2});
     stage.setPointerCapture(e.pointerId);stage.classList.add('dragging');
@@ -169,9 +172,9 @@ function setupOrbitControls(){
   function end(e){pointers.delete(e.pointerId);if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);if(!pointers.size)stage.classList.remove('dragging');}
   for(const event of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(event,end);
   stage.addEventListener('contextmenu',e=>e.preventDefault());
-  stage.addEventListener('wheel',e=>{e.preventDefault();const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1);zoomBy(Math.exp(clamp(-delta*.0015,-.5,.5)));},{passive:false});
-  stage.addEventListener('dblclick',resetView);
-  stage.addEventListener('keydown',e=>{
+  stage.addEventListener('wheel',e=>{if(previewMode!=='interactive')return;e.preventDefault();const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1);zoomBy(Math.exp(clamp(-delta*.0015,-.5,.5)));},{passive:false});
+  stage.addEventListener('dblclick',()=>{if(previewMode==='interactive')resetView();});
+  stage.addEventListener('keydown',e=>{if(previewMode!=='interactive')return;
     if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
       e.preventDefault();const dx=e.key==='ArrowLeft'?-15:e.key==='ArrowRight'?15:0,dy=e.key==='ArrowUp'?-15:e.key==='ArrowDown'?15:0;
       if(e.shiftKey)pan(dx,dy);else rotateBy(dx,dy);scheduleRender();
@@ -217,7 +220,8 @@ function refreshForm(){
   $('formula').textContent=dimsOkay?`${fmt(v.depth)} mm d’encastrement + ${fmt(v.rise)} mm de rehaussement`:'Renseignez les quatre dimensions pour calculer la hauteur.';
   $('status').textContent=!okay?'Vérifiez les valeurs saisies. L’aperçu conserve la dernière configuration valide.':dirty?'Configuration modifiée : cliquez sur Prévisualisation.':'Aperçu à jour avec la configuration ci-dessus.';
   $('status').classList.toggle('dirty',dirty || !okay);
-  $('download').disabled=dirty || !okay;
+  if(okay&&previewMode==='technical'&&dirty){applied=v;render();$('status').textContent='Dessin à jour avec les dimensions saisies.';$('status').classList.remove('dirty');}
+  $('download').disabled=!okay || (previewMode==='interactive'&&dirty);
 }
 function buildGeometry(v){
   const {width:w,length:l,depth:d,rise:r}=v,h=r+d,X=w/2+WALL,Y=l/2+WALL,x=w/2,y=l/2,b=baseDimensions(v),faces=[];
@@ -257,7 +261,7 @@ function featureEdges(faces){
   // Do not draw triangulation/rim seams or the plinth split when angle = 0.
   return [...edges.values()].filter(edge=>edge.normals.length===1 || edge.normals.some(n=>n.reduce((sum,v,i)=>sum+v*edge.normals[0][i],0)<1-1e-8));
 }
-function edgeSegments(geometry,project,camera){
+function edgeSegments(geometry,project,camera,selectedEdges){
   const dot=(p,q)=>p.reduce((v,n,i)=>v+n*q[i],0),cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
   const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]],lerp=(a,b,t)=>a.map((n,i)=>n+(b[i]-n)*t);
   const projectedFaces=geometry.faces.map(f=>f.points.map(p=>[...project(p),dot(p,camera)]));
@@ -274,7 +278,7 @@ function edgeSegments(geometry,project,camera){
     });
   }
   const result={visible:[],hidden:[]};
-  for(const edge of (geometry.edges || featureEdges(geometry.faces))){
+  for(const edge of (selectedEdges || geometry.edges || featureEdges(geometry.faces))){
     const a=[...project(edge.a),dot(edge.a,camera)],b=[...project(edge.b),dot(edge.b,camera)],u=sub(b,a);
     if(Math.hypot(...u)<1e-6)continue;
     const cuts=[0,1];
@@ -312,10 +316,11 @@ function render(){
   for(const f of faces){
     const lit=dot(f.normal,[-.45,-.55,.7]);
     const light=f.kind==='rim'?59:f.kind==='floor'?45:f.kind==='inner'?30+lit*10:f.kind==='chamfer-top'?57+lit*5:f.kind==='chamfer-bottom'?49+lit*8:40+lit*12;
-    const color=`hsl(48 28% ${light}%)`;
+    const color=previewMode==='technical'?'#e7e4da':`hsl(48 28% ${light}%)`;
     markup+=`<polygon data-surface="${f.kind}" points="${f.points.map(p=>project(p).join(',')).join(' ')}" fill="${color}" stroke="${color}" stroke-width=".6" stroke-linejoin="round"/>`;
   }
-  markup+=edgeMarkup(geometry,project,camera)+'</g>';
+  if(previewMode==='technical'){markup+=edgeMarkup(geometry,project,camera);if(activeField)markup+=highlightMarkup(geometry,project,camera,activeField,applied);}
+  markup+='</g>';
   markup+=`<text x="300" y="414" fill="#61705d" text-anchor="middle" font-size="12">Logement : ${fmt(w)} × ${fmt(l)} mm · hauteur totale : ${fmt(h)} mm</text><text x="300" y="432" fill="#61705d" text-anchor="middle" font-size="11">Angle d’extrusion : ${signedAngle(angle)}</text>`;
   $('drawing').innerHTML=markup;
   const b=geometry.base;
@@ -324,11 +329,28 @@ function render(){
   $('zoom-level').textContent=Math.round(view.zoom*100)+' %';
   $('zoom-in').disabled=view.zoom>=3;
   $('zoom-out').disabled=view.zoom<=.5;
-  $('model-desc').textContent=`Vue 3D orientable. Logement intérieur de ${fmt(w)} sur ${fmt(l)} mm, profondeur ${fmt(d)} mm, rehaussement ${fmt(r)} mm, hauteur totale ${fmt(h)} mm. Parois de 3 mm. Angle ${signedAngle(angle)}. Chanfreins extérieurs haut et bas de 2 mm à 45 degrés. Arêtes visibles en trait noir continu, arêtes cachées en pointillés.`;
+  $('preview').dataset.mode=previewMode;
+  $('model-stage').tabIndex=previewMode==='interactive'?0:-1;
+  $('model-stage').setAttribute('aria-label',previewMode==='interactive'?'Manipuler la pièce en 3D':'Dessin isométrique fixe');
+  $('model-desc').textContent=`${previewMode==='interactive'?'Vue 3D orientable':'Dessin isométrique fixe'}.  Logement intérieur de ${fmt(w)} sur ${fmt(l)} mm, profondeur ${fmt(d)} mm, rehaussement ${fmt(r)} mm, hauteur totale ${fmt(h)} mm. Parois de 3 mm. Angle ${signedAngle(angle)}. Chanfreins extérieurs haut et bas de 2 mm à 45 degrés. Arêtes visibles en trait noir continu, arêtes cachées en pointillés.`;
 }
-fields.forEach(k=>$(k).addEventListener('input',refreshForm));
-modeInputs.forEach(input=>input.addEventListener('change',setAngleMode));
-$('config-form').addEventListener('submit',e=>{e.preventDefault();refreshForm();if(!valid()){if($('angle-error').textContent)$('angle').focus();return;}applied=values();render();refreshForm();});
+function selectField(field){activeField=field;previewMode='technical';resetView();render();}
+fields.forEach(k=>{$(k).addEventListener('focus',()=>selectField(k));$(k).addEventListener('input',refreshForm);});
+modeInputs.forEach(input=>input.addEventListener('focus',()=>selectField('angle')));
+function highlightMarkup(geometry,project,camera,field,v){
+  const eq=(a,b)=>Math.abs(a-b)<1e-6,edges=geometry.edges.filter(({a,b})=>{
+    const dx=Math.abs(a[0]-b[0]),dy=Math.abs(a[1]-b[1]),dz=Math.abs(a[2]-b[2]),h=v.rise+v.depth;
+    if(field==='width')return dx>1e-6&&dy<1e-6&&dz<1e-6&&eq(Math.abs(a[1]),v.length/2)&&(eq(a[2],h)||eq(a[2],v.rise));
+    if(field==='length')return dy>1e-6&&dx<1e-6&&dz<1e-6&&eq(Math.abs(a[0]),v.width/2)&&(eq(a[2],h)||eq(a[2],v.rise));
+    if(field==='depth')return dz>1e-6&&dx<1e-6&&dy<1e-6&&eq(Math.abs(a[0]),v.width/2)&&eq(Math.abs(a[1]),v.length/2);
+    if(field==='rise'||field==='angle')return dz>1e-6&&Math.max(a[2],b[2])<=v.rise+1e-6&&Math.min(Math.abs(a[0]),Math.abs(b[0]))>=v.width/2+1e-6&&Math.min(Math.abs(a[1]),Math.abs(b[1]))>=v.length/2+1e-6;
+    return false;
+  });
+  const sections=edgeSegments(geometry,project,camera,edges),paths=k=>sections[k].map(({start:a,end:b})=>'<path d="M'+a[0].toFixed(3)+' '+a[1].toFixed(3)+'L'+b[0].toFixed(3)+' '+b[1].toFixed(3)+'"/>').join('');
+  return '<g data-highlight="'+field+'" fill="none" stroke="#c32e2e" stroke-width="2.3" stroke-linecap="round">'+paths('visible')+'</g><g data-highlight-hidden="'+field+'" fill="none" stroke="#c32e2e" stroke-width="2.1" stroke-dasharray="4 3">'+paths('hidden')+'</g>';
+}
+modeInputs.forEach(input=>input.addEventListener('change',()=>{selectField('angle');setAngleMode();}));
+$('config-form').addEventListener('submit',e=>{e.preventDefault();refreshForm();if(!valid()){if($('angle-error').textContent)$('angle').focus();return;}applied=values();previewMode='interactive';activeField=null;render();refreshForm();});
 function configurationText(v){
   const b=baseDimensions(v);
   return `CONFIGURATION — REHAUSSEUR RECTANGULAIRE\n\nLargeur intérieure : ${fmt(v.width)} mm\nLongueur intérieure : ${fmt(v.length)} mm\nHauteur d’encastrement : ${fmt(v.depth)} mm\nHauteur du rehaussement : ${fmt(v.rise)} mm\nHauteur totale : ${fmt(v.depth+v.rise)} mm\nÉpaisseur des parois : 3 mm\nDimensions extérieures au logement : ${fmt(v.width+6)} × ${fmt(v.length+6)} mm\nAngle d’extrusion : ${signedAngle(v.angle)}\nDépart de l’inclinaison : fond du logement, à ${fmt(v.rise)} mm du bas.\nConvention : positif = élargissement vers le bas ; négatif = rétrécissement vers le bas.\nChanfreins extérieurs haut et bas : 2 mm à 45°.\nBordure supérieure plane restante : 1 mm.\nSurface d’appui après chanfrein : ${fmt(b.width-2*CHAMFER)} × ${fmt(b.length-2*CHAMFER)} mm\n\nAucun jeu supplémentaire ajouté aux dimensions intérieures.\nFiche de dimensions à transmettre pour une demande d’impression 3D.\nMatériau, jeu d’ajustement et résistance à la charge à valider avant fabrication.\nAucune demande n’a été envoyée automatiquement.\n`;
