@@ -343,7 +343,7 @@ function highlightMarkup(geometry,project,camera,field,v){
     if(field==='width')return dx>1e-6&&dy<1e-6&&dz<1e-6&&eq(Math.abs(a[1]),v.length/2)&&(eq(a[2],h)||eq(a[2],v.rise));
     if(field==='length')return dy>1e-6&&dx<1e-6&&dz<1e-6&&eq(Math.abs(a[0]),v.width/2)&&(eq(a[2],h)||eq(a[2],v.rise));
     if(field==='depth')return dz>1e-6&&dx<1e-6&&dy<1e-6&&eq(Math.abs(a[0]),v.width/2)&&eq(Math.abs(a[1]),v.length/2);
-    if(field==='rise'||field==='angle')return dz>1e-6&&Math.max(a[2],b[2])<=v.rise+1e-6&&Math.min(Math.abs(a[0]),Math.abs(b[0]))>=v.width/2+1e-6&&Math.min(Math.abs(a[1]),Math.abs(b[1]))>=v.length/2+1e-6;
+    if(field==='rise'||field==='angle')return dz>1e-6&&Math.max(a[2],b[2])<=v.rise+1e-6&&eq(Math.abs(a[0])-Math.abs(a[1]),(v.width-v.length)/2)&&eq(Math.abs(b[0])-Math.abs(b[1]),(v.width-v.length)/2);
     return false;
   });
   const sections=edgeSegments(geometry,project,camera,edges),paths=k=>sections[k].map(({start:a,end:b})=>'<path d="M'+a[0].toFixed(3)+' '+a[1].toFixed(3)+'L'+b[0].toFixed(3)+' '+b[1].toFixed(3)+'"/>').join('');
@@ -361,6 +361,7 @@ setAngleMode();
 render();refreshForm();
 </script>
 </body></html>
+
 
 
 
